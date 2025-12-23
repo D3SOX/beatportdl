@@ -17,6 +17,7 @@ show_progress: true
 max_download_workers: 15
 max_global_workers: 15
 track_exists: update
+track_file_template: "{artists} - {name} ({mix_name})"
 EOF
 
 echo "Config file created at: $CONFIG_FILE"
