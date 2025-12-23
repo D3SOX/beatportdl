@@ -6,6 +6,22 @@ _Requires an active [Beatport](https://stream.beatport.com/) or [Beatsource](htt
 
 ![Screenshot](/screenshots/main.png?raw=true "Screenshot")
 
+## Note: Arch Linux Fork
+
+This is a fork of BeatportDL specifically adapted for Arch Linux with additional convenience scripts. The scripts are located in the `scripts/` directory and provide automated workflows for building, configuration, and audio conversion.
+
+### Convenience Scripts
+
+The following shell scripts are available in the `scripts/` directory:
+
+- **`build-arch.sh`** - Automated build script for Arch Linux. Checks for required dependencies (zig, go, taglib, zlib) using `pacman`, offers to install missing packages, and builds the project for Linux AMD64.
+
+- **`create_config.sh`** - Creates a default configuration file at `~/.config/beatportdl/beatportdl-config.yml` with sensible defaults. You'll need to edit this file to add your Beatport username and password.
+
+- **`convert_to_mp3.sh`** - Converts FLAC files to 320 kbps MP3 format while preserving all metadata. Takes the downloads directory as an argument (defaults to `~/Downloads/beatportdl`). Skips files that already have an MP3 version.
+
+- **`download_and_convert.sh`** - Complete workflow script that downloads tracks from Beatport as FLAC (using URLs from `urls.txt` in the project root) and automatically converts them to 320 kbps MP3. Requires ffmpeg to be installed.
+
 ## Setup
 
 1. [Download](https://github.com/unspok3n/beatportdl/releases/) or [build](#building) BeatportDL.
