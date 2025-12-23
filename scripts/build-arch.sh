@@ -46,5 +46,11 @@ fi
 
 echo ""
 echo "Building for Linux AMD64..."
+
+# Change to project root directory (parent of scripts directory)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_ROOT"
+
 make linux-amd64 -j"$(nproc)"
 
