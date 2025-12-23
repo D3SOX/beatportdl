@@ -42,8 +42,8 @@ linux-amd64:
 	CGO_ENABLED=1 \
 	GOOS=linux \
 	GOARCH=amd64 \
-	CC="${ZIG_CC} -target x86_64-linux-gnu ${LINUX_AMD64_LIB_PATH} -DTAGLIB_STATIC -Wall" \
-	CXX="${ZIG_CXX} -target x86_64-linux-gnu ${LINUX_AMD64_LIB_PATH} -DTAGLIB_STATIC -Wall" \
+	CC="${ZIG_CC} -target x86_64-linux-gnu ${LINUX_AMD64_LIB_PATH} -nostdinc -isystem /usr/include -isystem /usr/include/x86_64-linux-gnu -DTAGLIB_STATIC -Wall" \
+	CXX="${ZIG_CXX} -target x86_64-linux-gnu ${LINUX_AMD64_LIB_PATH} -nostdinc -isystem /usr/include -isystem /usr/include/x86_64-linux-gnu -DTAGLIB_STATIC -Wall" \
 	${BUILD_CMD} -o=${BUILD_DIR}/beatportdl-linux-amd64 ${BUILD_SRC}
 
 linux-arm64:
