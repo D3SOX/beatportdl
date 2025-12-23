@@ -4,9 +4,10 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 CONFIG_FILE="$HOME/.config/beatportdl/beatportdl-config.yml"
-URLS_FILE="$SCRIPT_DIR/urls.txt"
-BINARY="$SCRIPT_DIR/bin/beatportdl-linux-amd64"
+URLS_FILE="$PROJECT_ROOT/urls.txt"
+BINARY="$PROJECT_ROOT/bin/beatportdl-linux-amd64"
 
 # Check if config file exists and has credentials
 if [ ! -f "$CONFIG_FILE" ]; then
