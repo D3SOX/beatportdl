@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  beatportdl:
+    image: beatportdl-webui
+    container_name: beatportdl
+    restart: unless-stopped
+    env_file:
+      - deploy/.env
+    volumes:
+      - /home/user/.config/beatportdl/beatportdl-config.yml:/root/.config/beatportdl/beatportdl-config.yml:ro
+      - /home/user/beatportdl-downloads:/data/downloads
+    ports:
+      - "8080:80"
+
