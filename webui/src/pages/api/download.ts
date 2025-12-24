@@ -76,26 +76,35 @@ function getAudioFiles(dir: string, extensions: string[] = ['.mp3']): string[] {
 }
 
 /**
- * Convert a single audio file to MP3 using ffmpeg.
+ * Get the corresponding MP3 path for a source file (M4A/FLAC).
  */
-async function convertToMp3(inputPath: string): Promise<{ success: boolean; outputPath: string }> {
-  const dir = inputPath.substring(0, inputPath.lastIndexOf('/'));
-  let filename = inputPath.substring(inputPath.lastIndexOf('/') + 1);
+function getMp3PathForSource(sourcePath: string): string {
+  const dir = sourcePath.substring(0, sourcePath.lastIndexOf('/'));
+  let filename = sourcePath.substring(sourcePath.lastIndexOf('/') + 1);
 
   // Remove extension
-  const ext = filename.substring(filename.lastIndexOf('.'));
   filename = filename.substring(0, filename.lastIndexOf('.'));
 
   // Remove track number prefix (e.g., "01. ")
   filename = filename.replace(/^[0-9]{1,2}\. /, '');
 
-  const outputPath = join(dir, `${filename}.mp3`);
+  return join(dir, `${filename}.mp3`);
+}
+
+/**
+ * Convert a single audio file to MP3 using ffmpeg.
+ */
+async function convertToMp3(inputPath: string): Promise<{ success: boolean; outputPath: string }> {
+  const outputPath = getMp3PathForSource(inputPath);
 
   // Skip if MP3 already exists
   if (existsSync(outputPath)) {
     console.log(`[convert] Skipping (exists): ${outputPath}`);
     return { success: true, outputPath };
   }
+
+  // Get extension for quality determination
+  const ext = inputPath.substring(inputPath.lastIndexOf('.'));
 
   // Determine quality based on source format
   const isFlac = ext.toLowerCase() === '.flac';
@@ -252,30 +261,36 @@ export const POST: APIRoute = async ({ request }) => {
     console.log(`[${jobId}] New MP3 files: ${newFiles.length}`);
 
     if (newFiles.length === 0) {
-      // If no new MP3s, maybe include all recent files
-      const filesWithTime = allMp3s.map((f) => ({
-        path: f,
-        mtime: statSync(f).mtimeMs,
-      }));
-      filesWithTime.sort((a, b) => b.mtime - a.mtime);
-
-      // Take files modified in the last 5 minutes
+      // If no new MP3s, check for recently downloaded source files and use their corresponding MP3s
       const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-      const recentFiles = filesWithTime.filter((f) => f.mtime > fiveMinutesAgo).map((f) => f.path);
-      console.log(`[${jobId}] Recent MP3 files (last 5 min): ${recentFiles.length}`);
+      const allSourceFiles = getAudioFiles(downloadsDir, ['.m4a', '.flac']);
+      const recentSourceFiles = allSourceFiles.filter((f) => {
+        const mtime = statSync(f).mtimeMs;
+        return mtime > fiveMinutesAgo;
+      });
 
-      if (recentFiles.length === 0) {
-        // Last resort: include the M4A files directly
-        const allM4as = getAudioFiles(downloadsDir, ['.m4a', '.flac']);
-        const recentM4as = allM4as.filter((f) => {
-          const mtime = statSync(f).mtimeMs;
-          return mtime > fiveMinutesAgo;
-        });
+      if (recentSourceFiles.length > 0) {
+        // Find corresponding MP3 files for the recent source files (use existing MP3s)
+        console.log(`[${jobId}] Looking for corresponding MP3 files for ${recentSourceFiles.length} recent source file(s)...`);
+        const correspondingMp3s = recentSourceFiles
+          .map((sourceFile) => getMp3PathForSource(sourceFile))
+          .filter((mp3Path) => existsSync(mp3Path));
+        
+        console.log(`[${jobId}] Found ${correspondingMp3s.length} existing MP3 file(s) for recent downloads`);
+        newFiles = correspondingMp3s;
+      } else {
+        // If no new MP3s, maybe include all recent MP3 files
+        const filesWithTime = allMp3s.map((f) => ({
+          path: f,
+          mtime: statSync(f).mtimeMs,
+        }));
+        filesWithTime.sort((a, b) => b.mtime - a.mtime);
 
-        if (recentM4as.length > 0) {
-          console.log(`[${jobId}] Falling back to ${recentM4as.length} source file(s)`);
-          newFiles = recentM4as;
-        } else {
+        // Take files modified in the last 5 minutes
+        const recentFiles = filesWithTime.filter((f) => f.mtime > fiveMinutesAgo).map((f) => f.path);
+        console.log(`[${jobId}] Recent MP3 files (last 5 min): ${recentFiles.length}`);
+
+        if (recentFiles.length === 0) {
           return new Response(
             JSON.stringify({
               error:
@@ -294,9 +309,9 @@ export const POST: APIRoute = async ({ request }) => {
               headers: { 'Content-Type': 'application/json' },
             }
           );
+        } else {
+          newFiles = recentFiles;
         }
-      } else {
-        newFiles = recentFiles;
       }
     }
 
