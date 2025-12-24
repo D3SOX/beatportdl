@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apache2-utils \
     ffmpeg \
     zip \
+    unzip \
     curl \
     netcat-openbsd \
     ca-certificates \
