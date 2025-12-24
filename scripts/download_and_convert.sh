@@ -1,5 +1,5 @@
 #!/bin/bash
-# Complete workflow: Download FLAC from Beatport and convert to 320 MP3
+# Complete workflow: Download from Beatport and convert to 320 MP3
 
 set -e
 
@@ -40,29 +40,55 @@ if ! command -v ffmpeg &> /dev/null; then
     exit 1
 fi
 
+# Get quality setting from config to display appropriate message
+QUALITY=$(grep "^quality:" "$CONFIG_FILE" | awk '{print $2}' | tr -d '"')
+if [ -z "$QUALITY" ]; then
+    QUALITY="lossless"
+fi
+
+case "$QUALITY" in
+    lossless)
+        FORMAT="FLAC"
+        ;;
+    medium|medium-hls)
+        FORMAT="AAC"
+        ;;
+    high)
+        FORMAT="AAC (256 kbps)"
+        ;;
+    *)
+        FORMAT="audio"
+        ;;
+esac
+
 echo "=========================================="
-echo "Step 1: Downloading tracks as FLAC..."
+echo "Step 1: Downloading tracks as $FORMAT..."
 echo "=========================================="
 "$BINARY" -q "$URLS_FILE"
 
 echo ""
 echo "=========================================="
-echo "Step 2: Converting FLAC to 320 kbps MP3..."
+echo "Step 2: Converting to MP3..."
 echo "=========================================="
 
 # Get downloads directory from config
-DOWNLOADS_DIR=$(grep "downloads_directory:" "$CONFIG_FILE" | awk '{print $2}' | tr -d '"')
+DOWNLOADS_DIR=$(grep "^downloads_directory:" "$CONFIG_FILE" | awk '{print $2}' | tr -d '"')
 
 if [ -z "$DOWNLOADS_DIR" ]; then
     DOWNLOADS_DIR="$HOME/Downloads/beatportdl"
 fi
 
-# Convert FLAC files to MP3
+# Convert audio files to MP3
 "$SCRIPT_DIR/convert_to_mp3.sh" "$DOWNLOADS_DIR"
 
 echo ""
 echo "=========================================="
-echo "Done! Your tracks are ready as 320 kbps MP3"
+echo "Done! Your tracks are ready as MP3"
 echo "Location: $DOWNLOADS_DIR"
+if [ "$QUALITY" = "lossless" ]; then
+    echo "(FLAC: 320 kbps MP3)"
+else
+    echo "(AAC: V2 MP3 ~190 kbps, equivalent quality)"
+fi
 echo "=========================================="
 

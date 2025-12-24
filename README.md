@@ -16,11 +16,11 @@ The following shell scripts are available in the `scripts/` directory:
 
 - **`build-arch.sh`** - Automated build script for Arch Linux. Checks for required dependencies (zig, go, taglib, zlib) using `pacman`, offers to install missing packages, and builds the project for Linux AMD64.
 
-- **`create_config.sh`** - Creates a default configuration file at `~/.config/beatportdl/beatportdl-config.yml` with sensible defaults. You'll need to edit this file to add your Beatport username and password.
+- **`create_config.sh`** - Interactive configuration script that creates a config file at `~/.config/beatportdl/beatportdl-config.yml`. Prompts for quality selection (lossless FLAC, medium AAC, high AAC, or medium-hls AAC) based on your subscription tier. You'll need to edit the generated file to add your Beatport username and password.
 
-- **`convert_to_mp3.sh`** - Converts FLAC files to 320 kbps MP3 format while preserving all metadata. Takes the downloads directory as an argument (defaults to `~/Downloads/beatportdl`). Skips files that already have an MP3 version.
+- **`convert_to_mp3.sh`** - Intelligently converts audio files to MP3 while preserving all metadata. FLAC files are converted to 320 kbps MP3 (lossless source deserves high quality). AAC/M4A files are converted to V2 MP3 (~190 kbps average) to avoid pointless upsampling from lossy to lossy. Takes the downloads directory as an argument (defaults to `~/Downloads/beatportdl`). Skips files that already have an MP3 version.
 
-- **`download_and_convert.sh`** - Complete workflow script that downloads tracks from Beatport as FLAC (using URLs from `urls.txt` in the project root) and automatically converts them to 320 kbps MP3. Requires ffmpeg to be installed.
+- **`download_and_convert.sh`** - Complete workflow script that downloads tracks from Beatport (using URLs from `urls.txt` in the project root) and automatically converts them to MP3. Supports all quality settings from the config file (lossless FLAC, medium AAC, high AAC, medium-hls AAC). Uses appropriate bitrates based on source format. Requires ffmpeg to be installed.
 
 ## Setup
 
