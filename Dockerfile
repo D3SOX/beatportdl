@@ -34,6 +34,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
     zlib1g-dev \
+    libutfcpp-dev \
     git \
     && rm -rf /var/lib/apt/lists/*
 
