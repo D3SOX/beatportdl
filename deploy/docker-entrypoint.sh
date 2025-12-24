@@ -33,8 +33,19 @@ mkdir -p /root/.config/beatportdl
 echo "Starting Astro server on port $PORT..."
 cd /app/webui
 
+# Set environment variables to force HTTP and proper binding
+# Unset any HTTPS-related variables and explicitly set HTTP
+unset HTTPS
+unset SSL_CERT_FILE
+unset SSL_KEY_FILE
+export HOST=0.0.0.0
+export HOSTNAME=0.0.0.0
+export PORT=$PORT
+export NODE_ENV=production
+export PROTOCOL=http
+
 # Run server in background and capture output
-HOSTNAME=0.0.0.0 PORT=$PORT bun ./dist/server/entry.mjs > /tmp/astro-server.log 2>&1 &
+bun ./dist/server/entry.mjs > /tmp/astro-server.log 2>&1 &
 ASTRO_PID=$!
 
 # Wait for the Astro server to start (check if port is listening)
