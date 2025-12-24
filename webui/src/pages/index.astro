@@ -1,0 +1,345 @@
+---
+
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>BeatportDL</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;500;700&display=swap');
+
+      :root {
+        --bg-primary: #0a0a0f;
+        --bg-secondary: #12121a;
+        --bg-tertiary: #1a1a26;
+        --accent: #00ff88;
+        --accent-dim: #00cc6a;
+        --accent-glow: rgba(0, 255, 136, 0.15);
+        --text-primary: #e8e8f0;
+        --text-secondary: #888899;
+        --border: #2a2a3a;
+        --error: #ff4466;
+        --warning: #ffaa00;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html, body {
+        height: 100%;
+      }
+
+      body {
+        font-family: 'Outfit', system-ui, sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 2rem;
+        background-image: 
+          radial-gradient(ellipse at 50% 0%, rgba(0, 255, 136, 0.08) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 80%, rgba(80, 40, 180, 0.06) 0%, transparent 40%);
+      }
+
+      .container {
+        width: 100%;
+        max-width: 600px;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+      }
+
+      .subtitle {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        font-weight: 300;
+      }
+
+      .card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      }
+
+      label {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      textarea {
+        width: 100%;
+        height: 200px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+        resize: vertical;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: var(--accent-dim);
+        box-shadow: 0 0 0 3px var(--accent-glow);
+      }
+
+      textarea::placeholder {
+        color: var(--text-secondary);
+        opacity: 0.6;
+      }
+
+      .actions {
+        margin-top: 1.5rem;
+        display: flex;
+        gap: 1rem;
+      }
+
+      button {
+        flex: 1;
+        padding: 1rem 1.5rem;
+        border: none;
+        border-radius: 10px;
+        font-family: 'Outfit', system-ui, sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+        color: var(--bg-primary);
+        box-shadow: 0 4px 16px rgba(0, 255, 136, 0.25);
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 24px rgba(0, 255, 136, 0.35);
+      }
+
+      .btn-primary:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      .status {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        display: none;
+      }
+
+      .status.visible {
+        display: block;
+      }
+
+      .status.loading {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+      }
+
+      .status.success {
+        background: rgba(0, 255, 136, 0.1);
+        border: 1px solid var(--accent-dim);
+        color: var(--accent);
+      }
+
+      .status.error {
+        background: rgba(255, 68, 102, 0.1);
+        border: 1px solid var(--error);
+        color: var(--error);
+      }
+
+      :global(.download-link) {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding: 1rem 1.5rem;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+        border: none;
+        border-radius: 10px;
+        color: var(--bg-primary);
+        text-decoration: none;
+        font-family: 'Outfit', system-ui, sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        box-shadow: 0 4px 16px rgba(0, 255, 136, 0.25);
+        transition: all 0.2s;
+      }
+
+      :global(.download-link:hover) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 24px rgba(0, 255, 136, 0.35);
+        color: var(--bg-primary);
+      }
+
+      .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid var(--text-secondary);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-right: 0.5rem;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      footer {
+        margin-top: 2rem;
+        text-align: center;
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+      }
+
+      footer a {
+        color: var(--accent-dim);
+        text-decoration: none;
+      }
+
+      footer a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>BeatportDL</h1>
+        <p class="subtitle">Download and convert Beatport tracks to MP3</p>
+      </header>
+
+      <div class="card">
+        <label for="urls">Beatport / Beatsource URLs (one per line)</label>
+        <textarea 
+          id="urls" 
+          name="urls" 
+          placeholder="https://www.beatport.com/track/example/12345
+https://www.beatport.com/release/example/67890
+..."
+        ></textarea>
+
+        <div class="actions">
+          <button type="button" id="downloadBtn" class="btn-primary">
+            Download & Convert
+          </button>
+        </div>
+
+        <div id="status" class="status"></div>
+      </div>
+
+      <footer>
+        Powered by <a href="https://github.com/unspok3n/beatportdl" target="_blank">BeatportDL</a>
+      </footer>
+    </div>
+
+    <script>
+      const textarea = document.getElementById('urls') as HTMLTextAreaElement;
+      const downloadBtn = document.getElementById('downloadBtn') as HTMLButtonElement;
+      const statusDiv = document.getElementById('status') as HTMLDivElement;
+
+      function setStatus(type: 'loading' | 'success' | 'error', message: string, downloadUrl?: string) {
+        statusDiv.className = `status visible ${type}`;
+        
+        if (type === 'loading') {
+          statusDiv.innerHTML = `<span class="spinner"></span>${message}`;
+        } else if (type === 'success' && downloadUrl) {
+          statusDiv.innerHTML = `
+            <div>${message}</div>
+            <a href="${downloadUrl}" class="download-link" download>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7,10 12,15 17,10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Download MP3 Files
+            </a>
+          `;
+        } else {
+          statusDiv.textContent = message;
+        }
+      }
+
+      function hideStatus() {
+        statusDiv.className = 'status';
+      }
+
+      downloadBtn.addEventListener('click', async () => {
+        const urls = textarea.value.trim();
+        
+        if (!urls) {
+          setStatus('error', 'Please enter at least one URL.');
+          return;
+        }
+
+        downloadBtn.disabled = true;
+        setStatus('loading', 'Downloading and converting tracks... This may take a while.');
+
+        try {
+          const response = await fetch('/api/download', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ urls }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || 'Download failed');
+          }
+
+          setStatus('success', 'Download complete!', `/api/result?id=${data.jobId}`);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+          setStatus('error', message);
+        } finally {
+          downloadBtn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

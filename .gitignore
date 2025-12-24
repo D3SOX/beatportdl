@@ -10,3 +10,6 @@ beatportdl-config.yml
 downloads/
 ./beatportdl
 urls.txt
+webui/.data/
+webui/dist/
+webui/node_modules/
