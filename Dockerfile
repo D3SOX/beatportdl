@@ -21,7 +21,7 @@ RUN bun run build
 # =============================================================================
 FROM nginx:latest
 
-# Install runtime dependencies (Debian/Ubuntu packages)
+# Install runtime dependencies and build tools for TagLib 2
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
     apache2-utils \
@@ -31,7 +31,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     netcat-openbsd \
     ca-certificates \
+    build-essential \
+    cmake \
+    zlib1g-dev \
+    git \
     && rm -rf /var/lib/apt/lists/*
+
+# Build and install TagLib 2
+RUN cd /tmp && \
+    git clone --branch v2.1.1 --depth 1 https://github.com/taglib/taglib.git && \
+    cd taglib && \
+    cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON . && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd / && \
+    rm -rf /tmp/taglib
 
 # Install Bun
 RUN curl -fsSL https://bun.sh/install | bash
