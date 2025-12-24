@@ -1,13 +1,13 @@
+import { spawn } from 'node:child_process';
+import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { APIRoute } from 'astro';
-import { spawn } from 'child_process';
-import { writeFileSync, mkdirSync, existsSync, readdirSync, statSync } from 'fs';
-import { join } from 'path';
 import {
   BINARY_PATH,
-  PROJECT_ROOT,
+  checkDependencies,
   DATA_DIR,
   getDownloadsDir,
-  checkDependencies,
+  PROJECT_ROOT,
 } from '../../lib/config';
 
 interface DownloadRequest {
@@ -17,7 +17,11 @@ interface DownloadRequest {
 /**
  * Run a command and return a promise that resolves when it completes.
  */
-function runCommand(command: string, args: string[], cwd?: string): Promise<{ code: number; stdout: string; stderr: string }> {
+function runCommand(
+  command: string,
+  args: string[],
+  cwd?: string
+): Promise<{ code: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
     const proc = spawn(command, args, {
       cwd,
@@ -52,22 +56,22 @@ function runCommand(command: string, args: string[], cwd?: string): Promise<{ co
  */
 function getAudioFiles(dir: string, extensions: string[] = ['.mp3']): string[] {
   const files: string[] = [];
-  
+
   if (!existsSync(dir)) {
     return files;
   }
 
   const entries = readdirSync(dir, { withFileTypes: true });
-  
+
   for (const entry of entries) {
     const fullPath = join(dir, entry.name);
     if (entry.isDirectory()) {
       files.push(...getAudioFiles(fullPath, extensions));
-    } else if (extensions.some(ext => entry.name.endsWith(ext))) {
+    } else if (extensions.some((ext) => entry.name.endsWith(ext))) {
       files.push(fullPath);
     }
   }
-  
+
   return files;
 }
 
@@ -77,48 +81,54 @@ function getAudioFiles(dir: string, extensions: string[] = ['.mp3']): string[] {
 async function convertToMp3(inputPath: string): Promise<{ success: boolean; outputPath: string }> {
   const dir = inputPath.substring(0, inputPath.lastIndexOf('/'));
   let filename = inputPath.substring(inputPath.lastIndexOf('/') + 1);
-  
+
   // Remove extension
   const ext = filename.substring(filename.lastIndexOf('.'));
   filename = filename.substring(0, filename.lastIndexOf('.'));
-  
+
   // Remove track number prefix (e.g., "01. ")
   filename = filename.replace(/^[0-9]{1,2}\. /, '');
-  
+
   const outputPath = join(dir, `${filename}.mp3`);
-  
+
   // Skip if MP3 already exists
   if (existsSync(outputPath)) {
     console.log(`[convert] Skipping (exists): ${outputPath}`);
     return { success: true, outputPath };
   }
-  
+
   // Determine quality based on source format
   const isFlac = ext.toLowerCase() === '.flac';
-  const qualityArgs = isFlac 
-    ? ['-b:a', '320k']  // FLAC -> 320kbps CBR
-    : ['-q:a', '2'];    // AAC/M4A -> V2 VBR (~190kbps)
-  
+  const qualityArgs = isFlac
+    ? ['-b:a', '320k'] // FLAC -> 320kbps CBR
+    : ['-q:a', '2']; // AAC/M4A -> V2 VBR (~190kbps)
+
   console.log(`[convert] Converting: ${inputPath} -> ${outputPath}`);
-  
+
   const result = await runCommand('ffmpeg', [
     '-nostdin',
-    '-i', inputPath,
-    '-codec:a', 'libmp3lame',
+    '-i',
+    inputPath,
+    '-codec:a',
+    'libmp3lame',
     ...qualityArgs,
-    '-map_metadata', '0',
-    '-id3v2_version', '3',
-    '-write_id3v1', '1',
+    '-map_metadata',
+    '0',
+    '-id3v2_version',
+    '3',
+    '-write_id3v1',
+    '1',
     '-y',
-    '-loglevel', 'error',
+    '-loglevel',
+    'error',
     outputPath,
   ]);
-  
+
   if (result.code !== 0) {
     console.error(`[convert] Failed: ${inputPath}`, result.stderr);
     return { success: false, outputPath: '' };
   }
-  
+
   console.log(`[convert] Success: ${outputPath}`);
   return { success: true, outputPath };
 }
@@ -129,16 +139,16 @@ async function convertToMp3(inputPath: string): Promise<{ success: boolean; outp
 async function convertDirectory(dir: string): Promise<string[]> {
   const sourceFiles = getAudioFiles(dir, ['.flac', '.m4a']);
   const convertedFiles: string[] = [];
-  
+
   console.log(`[convert] Found ${sourceFiles.length} source file(s) to convert`);
-  
+
   for (const file of sourceFiles) {
     const result = await convertToMp3(file);
     if (result.success && result.outputPath) {
       convertedFiles.push(result.outputPath);
     }
   }
-  
+
   return convertedFiles;
 }
 
@@ -162,20 +172,25 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Parse request
-    const body = await request.json() as DownloadRequest;
+    const body = (await request.json()) as DownloadRequest;
     const urlsRaw = body.urls || '';
 
     // Parse and validate URLs
     const urls = urlsRaw
       .split('\n')
       .map((u: string) => u.trim())
-      .filter((u: string) => u.length > 0 && (u.includes('beatport.com') || u.includes('beatsource.com')));
+      .filter(
+        (u: string) => u.length > 0 && (u.includes('beatport.com') || u.includes('beatsource.com'))
+      );
 
     if (urls.length === 0) {
-      return new Response(JSON.stringify({ error: 'No valid Beatport/Beatsource URLs provided.' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ error: 'No valid Beatport/Beatsource URLs provided.' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     // Generate job ID
@@ -202,13 +217,16 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (downloadResult.code !== 0) {
       console.error(`[${jobId}] Download failed:`, downloadResult.stderr);
-      return new Response(JSON.stringify({ 
-        error: 'Download failed. Check your Beatport credentials and subscription.',
-        details: downloadResult.stderr,
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'Download failed. Check your Beatport credentials and subscription.',
+          details: downloadResult.stderr,
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     console.log(`[${jobId}] Download complete, checking for source files...`);
@@ -216,7 +234,9 @@ export const POST: APIRoute = async ({ request }) => {
     // Check what files were downloaded
     const downloadedFlac = getAudioFiles(downloadsDir, ['.flac']);
     const downloadedM4a = getAudioFiles(downloadsDir, ['.m4a']);
-    console.log(`[${jobId}] Downloaded: ${downloadedFlac.length} FLAC, ${downloadedM4a.length} M4A`);
+    console.log(
+      `[${jobId}] Downloaded: ${downloadedFlac.length} FLAC, ${downloadedM4a.length} M4A`
+    );
 
     // Run conversion natively
     console.log(`[${jobId}] Starting conversion...`);
@@ -226,50 +246,54 @@ export const POST: APIRoute = async ({ request }) => {
     // Get all MP3 files after conversion
     const allMp3s = getAudioFiles(downloadsDir, ['.mp3']);
     console.log(`[${jobId}] Total MP3 files now: ${allMp3s.length}`);
-    
+
     // Find newly created MP3 files
-    let newFiles = allMp3s.filter(f => !existingMp3s.has(f));
+    let newFiles = allMp3s.filter((f) => !existingMp3s.has(f));
     console.log(`[${jobId}] New MP3 files: ${newFiles.length}`);
 
     if (newFiles.length === 0) {
       // If no new MP3s, maybe include all recent files
-      const filesWithTime = allMp3s.map(f => ({
+      const filesWithTime = allMp3s.map((f) => ({
         path: f,
         mtime: statSync(f).mtimeMs,
       }));
       filesWithTime.sort((a, b) => b.mtime - a.mtime);
-      
+
       // Take files modified in the last 5 minutes
       const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-      const recentFiles = filesWithTime.filter(f => f.mtime > fiveMinutesAgo).map(f => f.path);
+      const recentFiles = filesWithTime.filter((f) => f.mtime > fiveMinutesAgo).map((f) => f.path);
       console.log(`[${jobId}] Recent MP3 files (last 5 min): ${recentFiles.length}`);
-      
+
       if (recentFiles.length === 0) {
         // Last resort: include the M4A files directly
         const allM4as = getAudioFiles(downloadsDir, ['.m4a', '.flac']);
-        const recentM4as = allM4as.filter(f => {
+        const recentM4as = allM4as.filter((f) => {
           const mtime = statSync(f).mtimeMs;
           return mtime > fiveMinutesAgo;
         });
-        
+
         if (recentM4as.length > 0) {
           console.log(`[${jobId}] Falling back to ${recentM4as.length} source file(s)`);
           newFiles = recentM4as;
         } else {
-          return new Response(JSON.stringify({ 
-            error: 'No audio files were created. The tracks may already exist or download failed.',
-            debug: {
-              downloadsDir,
-              existingMp3Count: existingMp3s.size,
-              downloadedFlac: downloadedFlac.length,
-              downloadedM4a: downloadedM4a.length,
-              convertedCount: convertedFiles.length,
-              totalMp3s: allMp3s.length,
+          return new Response(
+            JSON.stringify({
+              error:
+                'No audio files were created. The tracks may already exist or download failed.',
+              debug: {
+                downloadsDir,
+                existingMp3Count: existingMp3s.size,
+                downloadedFlac: downloadedFlac.length,
+                downloadedM4a: downloadedM4a.length,
+                convertedCount: convertedFiles.length,
+                totalMp3s: allMp3s.length,
+              },
+            }),
+            {
+              status: 500,
+              headers: { 'Content-Type': 'application/json' },
             }
-          }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' },
-          });
+          );
         }
       } else {
         newFiles = recentFiles;
@@ -282,39 +306,47 @@ export const POST: APIRoute = async ({ request }) => {
     const zipSuccess = await createZip(newFiles, zipPath);
 
     if (!zipSuccess) {
-      return new Response(JSON.stringify({ 
-        error: 'Failed to create zip archive.',
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to create zip archive.',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     console.log(`[${jobId}] Job complete! ${newFiles.length} file(s) packaged.`);
 
     // Clean up temp URLs file
     try {
-      const { unlinkSync } = await import('fs');
+      const { unlinkSync } = await import('node:fs');
       unlinkSync(urlsFilePath);
     } catch {
       // Ignore cleanup errors
     }
 
-    return new Response(JSON.stringify({ 
-      jobId,
-      fileCount: newFiles.length,
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-
+    return new Response(
+      JSON.stringify({
+        jobId,
+        fileCount: newFiles.length,
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   } catch (err) {
     console.error('Download API error:', err);
-    return new Response(JSON.stringify({ 
-      error: err instanceof Error ? err.message : 'An unexpected error occurred',
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({
+        error: err instanceof Error ? err.message : 'An unexpected error occurred',
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
 };

@@ -1,6 +1,6 @@
-import { homedir } from 'os';
-import { join } from 'path';
-import { readFileSync, existsSync } from 'fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 
 /** Project root (one level up from webui/) */
 export const PROJECT_ROOT = join(import.meta.dirname, '..', '..', '..');
@@ -75,4 +75,3 @@ export function checkDependencies(): { ok: boolean; errors: string[] } {
 
   return { ok: errors.length === 0, errors };
 }
-
