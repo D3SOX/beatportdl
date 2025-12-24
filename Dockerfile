@@ -19,17 +19,18 @@ RUN bun run build
 # =============================================================================
 # Stage 2: Runtime - nginx + Bun for SSR
 # =============================================================================
-FROM nginx:alpine
+FROM nginx:latest
 
-# Install runtime dependencies
-RUN apk add --no-cache \
+# Install runtime dependencies (Debian/Ubuntu packages)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
     apache2-utils \
     ffmpeg \
     zip \
     curl \
-    unzip \
-    netcat-openbsd
+    netcat-openbsd \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Bun
 RUN curl -fsSL https://bun.sh/install | bash
@@ -39,6 +40,10 @@ WORKDIR /app
 
 # Copy the entire built project from builder
 COPY --from=builder /app /app
+
+# Ensure the binary is executable
+RUN chmod +x /app/bin/beatportdl-linux-amd64 2>/dev/null || true
+RUN chmod +x /app/bin/beatportdl-linux-arm64 2>/dev/null || true
 
 # Copy static client assets to nginx web root
 COPY --from=builder /app/webui/dist/client /usr/share/nginx/html
