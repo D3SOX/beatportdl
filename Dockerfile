@@ -28,7 +28,8 @@ RUN apk add --no-cache \
     ffmpeg \
     zip \
     curl \
-    unzip
+    unzip \
+    netcat-openbsd
 
 # Install Bun
 RUN curl -fsSL https://bun.sh/install | bash
