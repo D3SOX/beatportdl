@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { APIRoute } from 'astro';
 import {
@@ -139,6 +139,16 @@ async function convertToMp3(inputPath: string): Promise<{ success: boolean; outp
   }
 
   console.log(`[convert] Success: ${outputPath}`);
+
+  // Delete source file after successful conversion
+  try {
+    unlinkSync(inputPath);
+    console.log(`[convert] Deleted source file: ${inputPath}`);
+  } catch (err) {
+    console.error(`[convert] Failed to delete source file: ${inputPath}`, err);
+    // Don't fail the conversion if deletion fails
+  }
+
   return { success: true, outputPath };
 }
 
