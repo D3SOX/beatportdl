@@ -4,7 +4,6 @@ import { join } from 'node:path';
 import type { APIRoute } from 'astro';
 import {
   BINARY_PATH,
-  checkDependencies,
   DATA_DIR,
   getDownloadsDir,
   PROJECT_ROOT,
@@ -181,15 +180,6 @@ async function createZip(files: string[], outputPath: string): Promise<boolean> 
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    // Check dependencies
-    const deps = checkDependencies();
-    if (!deps.ok) {
-      return new Response(JSON.stringify({ error: deps.errors.join('\n') }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
     // Parse request
     const body = (await request.json()) as DownloadRequest;
     const urlsRaw = body.urls || '';

@@ -2,6 +2,18 @@
 
 import node from '@astrojs/node';
 import { defineConfig } from 'astro/config';
+import { checkDependenciesOnStartup } from './src/lib/config.ts';
+
+function checkDependencies() {
+  return {
+    name: 'check-dependencies',
+    hooks: {
+      'astro:config:setup': () => {
+        checkDependenciesOnStartup();
+      }
+    }
+  }
+}
 
 // https://astro.build/config
 export default defineConfig({
@@ -13,4 +25,5 @@ export default defineConfig({
   adapter: node({
     mode: 'standalone',
   }),
+  integrations: [checkDependencies()],
 });

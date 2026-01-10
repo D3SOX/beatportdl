@@ -1,7 +1,7 @@
-import { arch } from 'node:os';
 import { existsSync, readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { arch, homedir } from 'node:os';
 import { join } from 'node:path';
+import { lookpathSync } from 'find-bin';
 
 /** Project root (one level up from webui/) */
 export const PROJECT_ROOT = join(import.meta.dirname, '..', '..', '..');
@@ -74,6 +74,13 @@ export function getDownloadsDir(): string {
 }
 
 /**
+ * Check if a command is available in PATH.
+ */
+function isCommandAvailable(command: string): boolean {
+  return lookpathSync(command) !== undefined;
+}
+
+/**
  * Check if required dependencies are available.
  */
 export function checkDependencies(): { ok: boolean; errors: string[] } {
@@ -87,5 +94,31 @@ export function checkDependencies(): { ok: boolean; errors: string[] } {
     errors.push(`Config file not found at ${CONFIG_PATH}. Please run create_config.sh first.`);
   }
 
+  // Check for CLI dependencies
+  if (!isCommandAvailable('zip')) {
+    errors.push(`'zip' command not found. Please install the zip utility.`);
+  }
+
+  if (!isCommandAvailable('ffmpeg')) {
+    errors.push(`'ffmpeg' command not found. Please install ffmpeg.`);
+  }
+
   return { ok: errors.length === 0, errors };
+}
+
+/**
+ * Run dependency check on startup and exit if dependencies are missing.
+ * This should be called once when the server starts.
+ */
+export function checkDependenciesOnStartup(): void {
+  console.log("Checking dependencies...");
+  const deps = checkDependencies();
+  console.log("deps", deps);
+  if (!deps.ok) {
+    console.error('Missing dependencies:');
+    deps.errors.forEach((error) => {
+      console.error(`  - ${error}`);
+    });
+    process.exit(1);
+  }
 }
