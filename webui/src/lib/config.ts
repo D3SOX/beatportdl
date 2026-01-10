@@ -111,9 +111,7 @@ export function checkDependencies(): { ok: boolean; errors: string[] } {
  * This should be called once when the server starts.
  */
 export function checkDependenciesOnStartup(): void {
-  console.log("Checking dependencies...");
   const deps = checkDependencies();
-  console.log("deps", deps);
   if (!deps.ok) {
     console.error('Missing dependencies:');
     deps.errors.forEach((error) => {
